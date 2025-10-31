@@ -12,6 +12,7 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.zip.GZIPOutputStream;
 import java.util.Formatter;
+import java.util.List;
 
 public class Github {
     public static boolean isCompressed;
@@ -265,4 +266,159 @@ public class Github {
     
         return treeSha;
     }
+
+    public static String makeTreeWithWorkingList() throws Exception {
+        // read the index file
+        File index = new File("./git/index");
+        List<String> workingList = new java.util.ArrayList<>();
+        String[] lines = readFile(index).split("\n");
+    
+        // copy paste from index to working index
+        for (String line : lines) {
+            workingList.add(line);
+        }
+    
+        // build trees from the working list
+        return buildTreeFromWorkingList(workingList);
+    }
+
+    private static String buildTreeFromWorkingList(List<String> workingList) throws Exception {
+        // if there's only one entry it has to be the root tree
+        if (workingList.size() == 1) {
+            String lineOfRoot = workingList.get(0);
+            String[] parts = lineOfRoot.split(" ");
+            String sha = parts[1]; 
+    
+            return sha;
+        }
+    
+        // get the deepest directory of the workingList
+        String deepest = findDeepestDir(workingList);
+    
+        // get the contents within the current deepest directory
+        List<String> entriesThatAreBeingWorkedOn = findTheEntriesThatWillBeWorkedOn(workingList, deepest);
+    
+        // build the tree body text from those entries
+        String treeBody = "";
+        for (int i = 0; i < entriesThatAreBeingWorkedOn.size(); i++) {
+
+            // break up into parts: type, sha, path
+            String entry = entriesThatAreBeingWorkedOn.get(i);
+            String[] parts = entry.split(" ");
+            String type = parts[0];
+            String sha = parts[1];
+            String path = parts[2];
+    
+            // get the name
+            String name;
+            int lastSlash = path.lastIndexOf('/');
+            if (lastSlash == -1) {
+                name = path;
+            } else {
+                name = path.substring(lastSlash + 1);
+            }
+    
+            // add line to tree body to rebuild the folder's contents
+            if (treeBody.length() == 0) {
+                treeBody = type + " " + sha + " " + name;
+            }
+            else {
+                treeBody = treeBody + "\n" + type + " " + sha + " " + name;
+            }
+        }
+    
+        // hash the tree text
+        String treeSha = hashFile(treeBody);
+    
+        // write tree object to the objects folder
+        File treeObj = new File("./git/objects/" + treeSha);
+        if (!treeObj.exists()) {
+            fileWriter(treeBody, treeObj);
+        }
+    
+        // update the working list:
+        // remove the entries from the working list
+        for (int i = 0; i < entriesThatAreBeingWorkedOn.size(); i++) {
+            workingList.remove(entriesThatAreBeingWorkedOn.get(i));
+        }
+    
+        // add new tree entry
+        String treeEntry = "tree " + treeSha + " " + deepest;
+        workingList.add(treeEntry);
+    
+        // keep going until only one root is left
+        return buildTreeFromWorkingList(workingList);
+    }
+
+    //find the deepest directioy/ tree for the workingList
+    public static String findDeepestDir(List<String> workingLines) {
+    String deepest = "";
+    int bestDepth = -1;
+
+    for (int i = 0; i < workingLines.size(); i++) {
+        String workingLine = workingLines.get(i);
+   
+        String[] parts = workingLine.split(" ");
+        String type = parts[0];
+        String path = parts[2];
+   
+        String dir = null;
+        if ("blob".equals(type)) {
+            dir = parentDir(path);
+        }
+        else if ("tree".equals(type)) {
+            dir = path;
+        }
+   
+        int depth = depthOf(dir);
+        if (depth > bestDepth) {
+            bestDepth = depth;
+            deepest = dir;
+        }
+    }
+    return deepest;
+}
+
+
+public static List<String> findTheEntriesThatWillBeWorkedOn(List<String> workingLines, String dir) {
+    List<String> result = new java.util.ArrayList<>();
+
+    for (int i = 0; i < workingLines.size(); i++) {
+        String line = workingLines.get(i);
+
+        String[] parts = line.split(" ");
+        String type = parts[0];
+        String path = parts[2];
+
+        // parent directory of this path
+        String parent = parentDir(path);
+
+        // if this entry lives directly in `dir`, keep it
+        if (parent.equals(dir)) {
+            result.add(line);
+        }
+    }
+
+    return result;
+}
+
+private static int depthOf(String dir) {
+    if (dir.isEmpty()) return 0;
+    int depth = 1;
+    for (int i = 0; i < dir.length(); i++) {
+        if (dir.charAt(i) == '/') {
+            depth++;
+        }
+    }
+    return depth;
+}
+
+
+private static String parentDir(String path) {
+    int last = path.lastIndexOf('/');
+    if (last < 0) {
+        return "";
+    }
+    return path.substring(0, last);
+}
 }

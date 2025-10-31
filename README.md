@@ -14,14 +14,16 @@ MakeTree() without a temporary working index, How I Implented it:
 5) return the final tree Sha
 
 MakeTree() with a temporary working index, How I will implement it:
-1) create a temporary working index
-2) while there are still subdirs within the temp working index, find the deepes folder.
-3) read all the files in the folder
-4) write out the tree contents (blob/tree <sha> <name>)
-5) hash the content and save it to the objects folder
-6) delete all the files in the subdir that was worked on and write the new sha of the tree (tree <sha> <name>) in the temp working index
-7) base case: when only one line returns of the tree <sha> <name> in the temp working index
-8) return the sha of the final tree
+1) create a temporary working index and copy the contents from the real index file to the working one
+2) recursively create the tree with the base case being when there is only one entry left
+3) find the deepest directory first (PSEUDOCODE FROM: https://stackoverflow.com/questions/58059463 find-the-deepest-file-directory-in-the-tree-java)
+4) get the entries that will being worked on (PSEUDOCODE FORM: https://www.geeksforgeeks.org/java/get-the-files-parent-directory-in-java/)
+5) build the tree from the entries by first breaking each entry into parts so that we can get the name.
+6) build the tree entry text
+7) hash the new tree with all of its subcontents
+8) write to the objects folder
+9) update the working list
+10) return the final tree sha
 
 
 

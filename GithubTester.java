@@ -10,7 +10,8 @@ public class GithubTester {
         //resetDirectories();
         Github.initializeDirs();
         //testIndexing();
-        testMakeTree();
+        //testMakeTree();
+        testMakeTreeWithWorkingList();
     }
 
     // DIRECTORY TESTERS
@@ -221,22 +222,72 @@ public class GithubTester {
             System.out.println("makeTree() works");
         }
     }
+
+    public static void testMakeTreeWithWorkingList() throws Exception {
+        generateTestFiles();
     
+        File f1 = new File("file1.txt");
+        File f2 = new File("file2.txt");
+        File f3 = new File("testFolder/file3.txt");
+        File f4 = new File("testFolder/subFolder/file4.txt");
+    
+        Github.createBLOBfile(f1);
+        Github.createBLOBfile(f2);
+        Github.createBLOBfile(f3);
+        Github.createBLOBfile(f4);
+    
+        String sha1 = Github.hashFile(Github.readFile(f1));
+        String sha2 = Github.hashFile(Github.readFile(f2));
+        String sha3 = Github.hashFile(Github.readFile(f3));
+        String sha4 = Github.hashFile(Github.readFile(f4));
+    
+        String indexText = 
+            "blob " + sha1 + " file1.txt\n" +
+            "blob " + sha2 + " file2.txt\n" +
+            "blob " + sha3 + " testFolder/file3.txt\n" +
+            "blob " + sha4 + " testFolder/subFolder/file4.txt";
+    
+        Github.fileWriter(indexText, new File("./git/index"));
+    
+        String rootSha = Github.makeTreeWithWorkingList();
+        System.out.println("Root tree SHA (working list): " + rootSha);
+    
+        boolean allGood = true;
+    
+        if (!new File("./git/objects/" + sha3).exists()) {
+            System.out.println("Missing blob for file3.txt");
+            allGood = false;
+        }
+    
+        if (!new File("./git/objects/" + sha4).exists()) {
+            System.out.println("Missing blob for file4.txt");
+            allGood = false;
+        }
+    
+        if (!new File("./git/objects/" + rootSha).exists()) {
+            System.out.println("Missing tree object for project root (working list)");
+            allGood = false;
+        }
+    
+        if (allGood) {
+            System.out.println("makeTreeWithWorkingList() works");
+        }
+    }
     
     public static void generateTestFiles() throws Exception{
-            new File("testFolder").mkdir();
-            new File("testFolder/subFolder").mkdir();
-            
-            File f1 = new File("file1.txt");
-            File f2 = new File("file2.txt");
-            File f3 = new File("testFolder/file3.txt");
-            File f4 = new File("testFolder/subFolder/file4.txt");
-            
-            Github.fileWriter("content one", f1);
-            Github.fileWriter("content two", f2);
-            Github.fileWriter("content three", f3);
-            Github.fileWriter("content four", f4);
-            
-            System.out.println("Test files created.");
-    }
+        new File("testFolder").mkdir();
+        new File("testFolder/subFolder").mkdir();
+        
+        File f1 = new File("file1.txt");
+        File f2 = new File("file2.txt");
+        File f3 = new File("testFolder/file3.txt");
+        File f4 = new File("testFolder/subFolder/file4.txt");
+        
+        Github.fileWriter("content one", f1);
+        Github.fileWriter("content two", f2);
+        Github.fileWriter("content three", f3);
+        Github.fileWriter("content four", f4);
+        
+        System.out.println("Test files created.");
+}
 }

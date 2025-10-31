@@ -6,14 +6,14 @@ import java.util.ArrayList;
 import java.io.Serializable;
 
 public class GithubTester {
-    public static void main(String[] args) throws IOException {
-        resetDirectories();
+    public static void main(String[] args) throws Exception {
+        //resetDirectories();
         Github.initializeDirs();
-        testIndexing();
+        //testIndexing();
+        testMakeTree();
     }
 
     // DIRECTORY TESTERS
-
     // tests if the directory exists
     public static boolean testDirExistence() {
         File[] files = Github.createDirList();
@@ -74,7 +74,6 @@ public class GithubTester {
     }
 
     // BLOB
-
     // creates a blob using file data input, returns true if worked and false if
     // not. resets Blob file after.
     public static boolean doesFileBLOB(File f) {
@@ -121,7 +120,6 @@ public class GithubTester {
     }
 
     // INDEX
-
     // creates 4 files & checks if the blobbing works correctly and the indexing
     // works (using the noncompressed version of SHA1)
     public static void testIndexing() throws IOException {
@@ -187,4 +185,58 @@ public class GithubTester {
         deleteTestFiles();
     }
 
+    
+
+    // MAKE TREE
+    public static void testMakeTree() throws Exception {
+        generateTestFiles();
+    
+        String rootSha = Github.makeTree(new File("."));
+        System.out.println("Root tree SHA: " + rootSha);
+    
+        File file3 = new File("testFolder/file3.txt");
+        File file4 = new File("testFolder/subFolder/file4.txt");
+    
+        String sha3 = Github.hashFile(Github.readFile(file3));
+        String sha4 = Github.hashFile(Github.readFile(file4));
+    
+        boolean allGood = true;
+    
+        if (!new File("./git/objects/" + sha3).exists()) {
+            System.out.println("Missing blob for file3.txt");
+            allGood = false;
+        }
+    
+        if (!new File("./git/objects/" + sha4).exists()) {
+            System.out.println("Missing blob for file4.txt");
+            allGood = false;
+        }
+    
+        if (!new File("./git/objects/" + rootSha).exists()) {
+            System.out.println("Missing tree object for project root");
+            allGood = false;
+        }
+    
+        if (allGood) {
+            System.out.println("makeTree() works");
+        }
+    }
+    
+    
+    public static void generateTestFiles() throws Exception{
+            new File("testFolder").mkdir();
+            new File("testFolder/subFolder").mkdir();
+            
+            File f1 = new File("file1.txt");
+            File f2 = new File("file2.txt");
+            File f3 = new File("testFolder/file3.txt");
+            File f4 = new File("testFolder/subFolder/file4.txt");
+            
+            Github.fileWriter("content one", f1);
+            Github.fileWriter("content two", f2);
+            Github.fileWriter("content three", f3);
+            Github.fileWriter("content four", f4);
+            
+            System.out.println("Test files created.");
+    }
 }

@@ -13,8 +13,15 @@ MakeTree() without a temporary working index, How I Implented it:
 4) Now take the final tree and get its Sha and write it to the objects file (just the Sha of the tree)
 5) return the final tree Sha
 
-MakeTree() with a temporary working index, How I implemented it:
-1) 
+MakeTree() with a temporary working index, How I will implement it:
+1) create a temporary working index
+2) while there are still subdirs within the temp working index, find the deepes folder.
+3) read all the files in the folder
+4) write out the tree contents (blob/tree <sha> <name>)
+5) hash the content and save it to the objects folder
+6) delete all the files in the subdir that was worked on and write the new sha of the tree (tree <sha> <name>) in the temp working index
+7) base case: when only one line returns of the tree <sha> <name> in the temp working index
+8) return the sha of the final tree
 
 
 

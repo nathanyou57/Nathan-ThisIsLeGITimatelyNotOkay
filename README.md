@@ -1,5 +1,25 @@
 # ThisIsLeGITimatelyNotOkay
 
+Nathan's edits:
+
+Existing Bugs:
+1) fixed hashIndexFile to pass a file instead of a String
+2) finished createArrayOfAllFilessEntryToIndex(). The purpose of this method is to assist in building trees. It's a list of all files currently in the index. The method reads each line in the index file and then returns the file paths in a string array
+
+MakeTree() without a temporary working index, How I Implented it:
+1) If the input is not a directory, return an empty string.
+2) TREES: move through each subdir recursively and return this format: tree <sha> <name>.
+3) BLOBS: create a BlOB for each file and get its Sha. return this format blob <sha> <name>
+4) Now take the final tree and get its Sha and write it to the objects file (just the Sha of the tree)
+5) return the final tree Sha
+
+MakeTree() with a temporary working index, How I implemented it:
+1) 
+
+
+
+####################################################################################################################################
+
 In this project we are trying to recreate a version of GitHub using our programming skills.
 
 Github.java: Basis for all functions

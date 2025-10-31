@@ -1,5 +1,4 @@
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.FileWriter;
@@ -173,7 +172,7 @@ public class Github {
         return out.toString("ISO-8859-1");
     }
 
-    public static void updateIndex(String sha1, String fileName) throws FileNotFoundException {
+    public static void updateIndex(String sha1, String fileName) throws IOException {
         File file = new File(fileName);
         File index = new File("./git/index");
         String toWrite = sha1 + " " + getPathStartingFromWorkingDir(file);
@@ -189,15 +188,81 @@ public class Github {
     }
 
     public static String hashIndexFile() throws IOException {
-        String contents = readFile("./git/index");
-        return hashFile(contents);
+        return hashFile(readFile(new File("./git/index")));
     }
 
     public static String[] createArrayOfAllFilessEntryToIndex() {
-        String[] pathNames
+        File index = new File("./git/index");
+        String contents = readFile(index);
+    
+        if (contents.isEmpty()) {
+            return new String[0];
+        }
+    
+        String[] lines = contents.split("\n");
+        String[] pathNames = new String[lines.length];
+    
+        for (int i = 0; i < lines.length; i++) {
+            String line = lines[i];
+            String[] parts = line.split(" ", 2);
+            if (parts.length == 2) {
+                pathNames[i] = parts[1];
+            }
+        }
+        return pathNames;
     }
 
     public static void updateIndexFromLeaf() throws IOException {
 
+    }
+
+    public static String makeTree(File dir) throws Exception{
+        if (dir == null || !dir.isDirectory()) {
+            return "";
+        }
+    
+        File[] itemsInDir = dir.listFiles();
+        if (itemsInDir == null) {
+            itemsInDir = new File[0];
+        }
+    
+        StringBuilder treeBody = new StringBuilder();
+
+        // trees first (remember to go from the deepest tree first)
+        for (File itemType : itemsInDir) {
+            if (itemType.isDirectory()) {
+                String subTreeSha = makeTree(itemType);
+                if (!subTreeSha.isEmpty()) {
+                    if (treeBody.length() > 0) {
+                        treeBody.append("\n");
+                    }
+                    treeBody.append("tree ").append(subTreeSha).append(" ").append(itemType.getName());
+                }
+            }
+        }
+    
+        // blobs
+        for (File itemType : itemsInDir) {
+            if (itemType.isFile()) {
+                createBLOBfile(itemType);
+                String blobSha = hashFile(readFile(itemType));
+                if (treeBody.length() > 0) {
+                    treeBody.append("\n");
+                }
+                treeBody.append("blob ").append(blobSha).append(" ").append(itemType.getName());
+            }
+        }
+    
+        // hash the tree
+        String treeText = treeBody.toString();
+        String treeSha = hashFile(treeText);
+    
+        // save the tree into objects folder
+        File treeObjFile = new File("./git/objects/" + treeSha);
+        if (!treeObjFile.exists()) {
+            fileWriter(treeText, treeObjFile);
+        }
+    
+        return treeSha;
     }
 }

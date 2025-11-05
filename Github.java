@@ -387,9 +387,10 @@ public class Github {
             }
         }
         return deepest;
-        }
+    }
 
 
+    // find the entries that are 1 level deep to the dir
     public static List<String> findTheEntriesThatWillBeWorkedOn(List<String> workingLines, String dir) {
         List<String> result = new java.util.ArrayList<>();
 
@@ -403,7 +404,7 @@ public class Github {
             // parent directory of this path
             String parent = parentDir(path);
 
-            // if this entry lives directly in `dir`, keep it
+            // if this entry lives directly in dir, keep it
             if (parent.equals(dir)) {
                 result.add(line);
             }
@@ -411,6 +412,7 @@ public class Github {
         return result;
     }
 
+    // counts how deep a dir is by counting slashes
     private static int depthOf(String dir) {
         if (dir.isEmpty()) return 0;
         int depth = 1;
@@ -423,6 +425,7 @@ public class Github {
     }
 
 
+    // returns the parent directory
     private static String parentDir(String path) {
         int last = path.lastIndexOf('/');
         if (last < 0) {
